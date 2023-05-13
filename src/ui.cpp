@@ -980,14 +980,14 @@ uilist::handle_mouse_result_t uilist::handle_mouse( const input_context &ctxt,
                     // function is called again.
                     fselected = new_fselected;
                     selected = fentries[fselected];
+                    if( callback != nullptr ) {
+                        callback->select( this );
+                    }
                     if( ret_act == "SELECT" ) {
                         if( enabled || allow_disabled ) {
                             ret = entries[selected].retval;
                             // Treating clicking during filtering as confirmation and stop filtering
                             result = handle_mouse_result_t::confirmed;
-                        }
-                        if( callback != nullptr ) {
-                            callback->select( this );
                         }
                     }
                 }
@@ -1301,29 +1301,32 @@ template bool navigate_ui_list<defense_location, defense_location>( const std::s
         int page_delta, defense_location size, bool wrap );
 
 // Templating of existing `unsigned int` triggers linter rules against `unsigned long`
-// NOLINTBEGIN(cata-no-long)
+// NOLINTs below are to address
 template<typename V, typename S>
 bool navigate_ui_list( const std::string &action, V &val, int page_delta, S size, bool wrap )
 {
     if( action == "UP" || action == "SCROLL_UP" || action == "DOWN" || action == "SCROLL_DOWN" ) {
         if( wrap ) {
-            val = increment_and_wrap( val, action == "DOWN" ||
-                                      action == "SCROLL_DOWN", static_cast<V>( size ) );
+            // NOLINTNEXTLINE(cata-no-long)
+            val = inc_clamp_wrap( val, action == "DOWN" || action == "SCROLL_DOWN", static_cast<V>( size ) );
         } else {
-            val = increment_and_clamp( val, action == "DOWN" ||
-                                       action == "SCROLL_DOWN", static_cast<V>( size - 1 ) );
+            val = inc_clamp( val, action == "DOWN" || action == "SCROLL_DOWN",
+                             // NOLINTNEXTLINE(cata-no-long)
+                             static_cast<V>( size ? size - 1 : 0 ) );
         }
     } else if( ( action == "PAGE_UP" || action == "PAGE_DOWN" ) && page_delta ) {
         // page navigation never wraps
-        val = increment_and_clamp( val, action == "PAGE_UP" ? -page_delta : page_delta,
-                                   static_cast<V>( size - 1 ) );
+        val = inc_clamp( val, action == "PAGE_UP" ? -page_delta : page_delta,
+                         // NOLINTNEXTLINE(cata-no-long)
+                         static_cast<V>( size ? size - 1 : 0 ) );
     } else if( action == "HOME" ) {
+        // NOLINTNEXTLINE(cata-no-long)
         val = static_cast<V>( 0 );
-    } else if( action == "END" && size ) {
+    } else if( action == "END" ) {
+        // NOLINTNEXTLINE(cata-no-long)
         val = static_cast<V>( size ? size - 1 : 0 );
     } else {
         return false;
     }
     return true;
 }
-// NOLINTEND(cata-no-long)
