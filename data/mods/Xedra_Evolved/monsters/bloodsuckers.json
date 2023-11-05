@@ -42,7 +42,7 @@
       { "id": "grab", "cooldown": 7 }
     ],
     "death_drops": "default_moroi_death_drops",
-    "flags": [ "SEES", "HEARS", "SMELLS", "GRABS", "WARM", "BASHES", "REVIVES", "PUSH_MON", "VAMP_VIRUS" ],
+    "flags": [ "SEES", "HEARS", "SMELLS", "HAS_MIND", "GRABS", "WARM", "BASHES", "REVIVES", "PUSH_MON" ],
     "armor": { "bash": 15, "cut": 5, "bullet": 14, "electric": 6 }
   },
   {
@@ -89,7 +89,7 @@
       { "id": "grab", "cooldown": 7 }
     ],
     "death_drops": "default_moroi_death_drops",
-    "flags": [ "SEES", "HEARS", "SMELLS", "BASHES", "GRABS", "POISON", "NO_BREATHE", "REVIVES", "PUSH_MON", "FILTHY", "VAMP_VIRUS" ],
+    "flags": [ "SEES", "HEARS", "SMELLS", "BASHES", "GRABS", "POISON", "NO_BREATHE", "REVIVES", "PUSH_MON", "FILTHY" ],
     "armor": { "bash": 25, "cut": 8, "bullet": 24, "electric": 14 }
   },
   {
@@ -117,7 +117,7 @@
     "weakpoint_sets": [ "wps_humanoid_body" ],
     "families": [ "prof_intro_biology", "prof_physiology" ],
     "dodge": 1,
-    "special_attacks": [ [ "PARROT", 800 ] ],
+    "special_attacks": [ [ "PARROT", 100 ] ],
     "harvest": "human",
     "dissect": "dissect_human_sample_single",
     "vision_day": 30,
@@ -127,7 +127,18 @@
     "upgrades": { "half_life": 50, "into_group": "GROUP_RENFIELD_UPGRADE" },
     "zombify_into": "mon_zombie",
     "anger_triggers": [ "FRIEND_DIED", "FRIEND_ATTACKED", "HURT" ],
-    "flags": [ "SEES", "HEARS", "SMELLS", "WARM", "BASHES", "GROUP_BASH", "HUMAN", "CAN_OPEN_DOORS", "PATH_AVOID_DANGER_1" ],
+    "flags": [
+      "SEES",
+      "HEARS",
+      "SMELLS",
+      "WARM",
+      "BASHES",
+      "GROUP_BASH",
+      "HUMAN",
+      "CAN_OPEN_DOORS",
+      "PATH_AVOID_DANGER_1",
+      "WIELDED_WEAPON"
+    ],
     "armor": { "bash": 4, "cut": 4, "stab": 4, "bullet": 4 }
   },
   {
@@ -163,7 +174,7 @@
     "diff": 5,
     "starting_ammo": { "9mm": 5 },
     "special_attacks": [
-      [ "PARROT", 800 ],
+      [ "PARROT", 100 ],
       {
         "type": "gun",
         "cooldown": 10,
@@ -174,6 +185,7 @@
         "fake_dex": 8,
         "fake_per": 10,
         "ranges": [ [ 2, 14, "DEFAULT" ] ],
+        "condition": { "and": [ { "not": { "u_has_effect": "maimed_arm" } }, { "not": { "u_has_effect": "disarmed" } } ] },
         "require_targeting_player": false,
         "target_moving_vehicles": true,
         "description": "The renfield fires their Glock!"
@@ -195,7 +207,8 @@
       "CLIMBS",
       "PUSH_MON",
       "PATH_AVOID_DANGER_1",
-      "DROPS_AMMO"
+      "DROPS_AMMO",
+      "WIELDED_WEAPON"
     ],
     "armor": { "bash": 4, "cut": 6, "stab": 4, "bullet": 4 }
   },
@@ -227,7 +240,7 @@
     "harvest": "human",
     "starting_ammo": { "shot_00": 5 },
     "special_attacks": [
-      [ "PARROT", 800 ],
+      [ "PARROT", 100 ],
       {
         "type": "gun",
         "cooldown": 10,
@@ -239,6 +252,7 @@
         "fake_per": 9,
         "//": "(ferals don't care about max-effective range.)",
         "ranges": [ [ 2, 25, "DEFAULT" ] ],
+        "condition": { "and": [ { "not": { "u_has_effect": "maimed_arm" } }, { "not": { "u_has_effect": "disarmed" } } ] },
         "require_targeting_player": false,
         "target_moving_vehicles": true,
         "description": "The renfield fires their shotgun!"
@@ -258,7 +272,8 @@
       "CLIMBS",
       "PUSH_MON",
       "PATH_AVOID_DANGER_1",
-      "DROPS_AMMO"
+      "DROPS_AMMO",
+      "WIELDED_WEAPON"
     ],
     "anger_triggers": [ "FRIEND_DIED", "FRIEND_ATTACKED", "HURT" ],
     "armor": { "bash": 4, "cut": 6, "stab": 4, "bullet": 4 }
@@ -291,7 +306,7 @@
     "harvest": "human",
     "starting_ammo": { "shot_00": 5 },
     "special_attacks": [
-      [ "PARROT", 800 ],
+      [ "PARROT", 100 ],
       {
         "type": "gun",
         "cooldown": 10,
@@ -302,6 +317,7 @@
         "fake_dex": 10,
         "no_ammo_sound": "hiss!",
         "ranges": [ [ 0, 10, "DEFAULT" ] ],
+        "condition": { "and": [ { "not": { "u_has_effect": "maimed_arm" } }, { "not": { "u_has_effect": "disarmed" } } ] },
         "require_targeting_player": false,
         "target_moving_vehicles": true,
         "description": "The renfield shoots their flamethrower!"
@@ -321,7 +337,8 @@
       "CLIMBS",
       "PUSH_MON",
       "PATH_AVOID_DANGER_1",
-      "DROPS_AMMO"
+      "DROPS_AMMO",
+      "WIELDED_WEAPON"
     ],
     "anger_triggers": [ "FRIEND_DIED", "FRIEND_ATTACKED", "HURT" ],
     "armor": { "bash": 4, "cut": 6, "stab": 4, "bullet": 4 }
@@ -402,7 +419,7 @@
     "bleed_rate": 50,
     "path_settings": { "avoid_traps": true, "avoid_sharp": false },
     "revert_to_itype": "bot_prototype_cyborg",
-    "special_attacks": [ [ "PARROT", 800 ], { "id": "impale", "cooldown": 5, "min_mul": 1, "max_mul": 3 }, [ "BIO_OP_TAKEDOWN", 20 ] ],
+    "special_attacks": [ [ "PARROT", 100 ], { "id": "impale", "cooldown": 5, "min_mul": 1, "max_mul": 3 }, [ "BIO_OP_TAKEDOWN", 20 ] ],
     "weakpoint_sets": [ "wps_cyborg_body" ],
     "families": [ "prof_wp_cyborg" ],
     "harvest": "mon_broken_cyborg",
@@ -446,7 +463,7 @@
     "dissect": "dissect_human_sample_large",
     "special_attacks": [
       { "id": "scratch", "move_cost": 90, "cooldown": 3, "min_mul": 1.5, "max_mul": 3.5 },
-      [ "PARROT", 800 ],
+      [ "PARROT", 100 ],
       { "id": "cut_throat", "move_cost": 130, "cooldown": 4, "min_mul": 1.5, "max_mul": 3.5 },
       { "id": "smash", "move_cost": 100, "cooldown": 8, "min_mul": 0.8, "throw_strength": 50 },
       { "id": "longswipe", "move_cost": 120, "cooldown": 12, "min_mul": 1.5, "max_mul": 3 }

@@ -266,6 +266,45 @@ class bookbinder_copy_activity_actor: public activity_actor
         static std::unique_ptr<activity_actor> deserialize( JsonValue &jsin );
 };
 
+class data_handling_activity_actor: public activity_actor
+{
+    public:
+        explicit data_handling_activity_actor() = default;
+        explicit data_handling_activity_actor( const item_location &, const std::vector<item_location> & );
+
+        activity_id get_type() const override {
+            return activity_id( "ACT_DATA_HANDLING" );
+        }
+
+        bool can_resume_with_internal( const activity_actor &, const Character & ) const override {
+            return false;
+        }
+
+        void start( player_activity &, Character & ) override;
+        void do_turn( player_activity &, Character & ) override;
+        void finish( player_activity &, Character & ) override;
+        void canceled( player_activity &, Character & ) override;
+
+        std::unique_ptr<activity_actor> clone() const override {
+            return std::make_unique<data_handling_activity_actor>( *this );
+        }
+
+        void serialize( JsonOut & ) const override;
+        static std::unique_ptr<activity_actor> deserialize( JsonValue & );
+    private:
+        static constexpr time_duration time_per_card = 1_minutes;
+        item_location recorder;
+        std::vector<item_location> targets;
+        time_duration time_until_next_card = 0_seconds;
+        int handled_cards = 0;
+        int encrypted_cards = 0;
+        int downloaded_photos = 0;
+        int downloaded_songs = 0;
+        std::vector<recipe_id> downloaded_recipes;
+        int downloaded_extended_photos = 0;
+        int downloaded_monster_photos = 0;
+};
+
 class hotwire_car_activity_actor : public activity_actor
 {
     private:
@@ -590,8 +629,9 @@ class lockpick_activity_actor : public activity_actor
 class ebooksave_activity_actor : public activity_actor
 {
     public:
-        explicit ebooksave_activity_actor( const item_location &book, const item_location &ereader ) :
-            book( book ), ereader( ereader ) {};
+        explicit ebooksave_activity_actor( const std::vector<item_location> &books,
+                                           const item_location &ereader ) :
+            books( books ), ereader( ereader ) {};
 
         activity_id get_type() const override {
             return activity_id( "ACT_EBOOKSAVE" );
@@ -599,12 +639,17 @@ class ebooksave_activity_actor : public activity_actor
 
         static int pages_in_book( const itype_id &book ) {
             // an A4 sheet weights roughly 5 grams
-            return units::to_gram( book->weight ) / 5;
+            return std::max( 1, static_cast<int>( units::to_gram( book->weight ) / 5 ) );
         };
+        static int total_pages( const std::vector<item_location> &books );
+        static time_duration required_time( const std::vector<item_location> &books );
+        static int required_charges( const std::vector<item_location> &books,
+                                     const item_location &ereader );
 
         void start( player_activity &act, Character &/*who*/ ) override;
-        void do_turn( player_activity &/*act*/, Character &who ) override;
+        void do_turn( player_activity &act, Character &who ) override;
         void finish( player_activity &act, Character &who ) override;
+        void canceled( player_activity &act, Character &who ) override;
 
         std::unique_ptr<activity_actor> clone() const override {
             return std::make_unique<ebooksave_activity_actor>( *this );
@@ -614,16 +659,23 @@ class ebooksave_activity_actor : public activity_actor
         static std::unique_ptr<activity_actor> deserialize( JsonValue &jsin );
 
     private:
-        item_location book;
+        /**
+         * All remaining books left to scan.
+         * After a book is fully scanned to ereader, this list is modified so that the scanned book is removed from here.
+        */
+        std::vector<item_location> books;
         item_location ereader;
-        static constexpr time_duration time_per_page = 5_seconds;
+        /** How many books this activity has scanned to ereader so far. */
+        int handled_books = 0;
+        /** How much time is left on this book until it is fully scanned and we can move on to the next book. */
+        int turns_left_on_current_book = 0;
 
-        bool can_resume_with_internal( const activity_actor &other,
-                                       const Character &/*who*/ ) const override {
-            const ebooksave_activity_actor &actor = static_cast<const ebooksave_activity_actor &>
-                                                    ( other );
-            return actor.book == book && actor.ereader == ereader;
-        }
+        static constexpr time_duration time_per_page = 5_seconds;
+        // Every 25 pages requires one charge of the ereader
+        static constexpr int pages_per_charge = 25;
+
+        void start_scanning_next_book( player_activity &act );
+        void completed_scanning_current_book( player_activity &act, Character &who );
 };
 
 class migration_cancel_activity_actor : public activity_actor
@@ -852,7 +904,8 @@ class craft_activity_actor : public activity_actor
         int cached_assistants; // NOLINT(cata-serialize)
         double cached_base_total_moves; // NOLINT(cata-serialize)
         double cached_cur_total_moves; // NOLINT(cata-serialize)
-
+        float cached_workbench_multiplier; // NOLINT(cata-serialize)
+        bool use_cached_workbench_multiplier; // NOLINT(cata-serialize)
         bool check_if_craft_okay( item_location &craft_item, Character &crafter );
     public:
         craft_activity_actor( item_location &it, bool is_long );
@@ -1160,7 +1213,8 @@ class disassemble_activity_actor : public activity_actor
     private:
         int moves_total;
         float activity_override = NO_EXERCISE; // NOLINT(cata-serialize)
-
+        float cached_workbench_multiplier; // NOLINT(cata-serialize)
+        bool use_cached_workbench_multiplier; // NOLINT(cata-serialize)
     public:
         item_location target;
 
@@ -1220,12 +1274,14 @@ class insert_item_activity_actor : public activity_actor
         drop_locations items;
         contents_change_handler handler;
         bool all_pockets_rigid;
+        bool reopen_menu;
 
     public:
 
         insert_item_activity_actor() = default;
-        insert_item_activity_actor( const item_location &holster, const drop_locations &holstered_list ) :
-            holster( holster ), items( holstered_list ) {}
+        insert_item_activity_actor( const item_location &holster, const drop_locations &holstered_list,
+                                    bool reopen_menu = false ) : holster( holster ), items( holstered_list ),
+            reopen_menu( reopen_menu ) {}
 
         activity_id get_type() const override {
             return activity_id( "ACT_INSERT_ITEM" );
@@ -1434,6 +1490,37 @@ class tent_deconstruct_activity_actor : public activity_actor
         static std::unique_ptr<activity_actor> deserialize( JsonValue &jsin );
 };
 
+class reel_cable_activity_actor : public activity_actor
+{
+    private:
+        int moves_total;
+        item_location cable;
+    public:
+        reel_cable_activity_actor( int moves_total, const item_location &cable ) :
+            moves_total( moves_total ), cable( cable ) {}
+        activity_id get_type() const override {
+            return activity_id( "ACT_REEL_CABLE" );
+        }
+
+        bool can_resume_with_internal( const activity_actor &other,
+                                       const Character &/*who*/ ) const override {
+            const reel_cable_activity_actor &actor = static_cast<const reel_cable_activity_actor &>
+                    ( other );
+            return actor.cable == cable;
+        }
+
+        void start( player_activity &act, Character & ) override;
+        void do_turn( player_activity &, Character & ) override {}
+        void finish( player_activity &act, Character &who ) override;
+
+        std::unique_ptr<activity_actor> clone() const override {
+            return std::make_unique<reel_cable_activity_actor>( *this );
+        }
+
+        void serialize( JsonOut &jsout ) const override;
+        static std::unique_ptr<activity_actor> deserialize( JsonValue &jsin );
+};
+
 class shave_activity_actor : public activity_actor
 {
     public:
@@ -1623,6 +1710,32 @@ class wield_activity_actor : public activity_actor
         item_location target_item;
         int quantity;
         contents_change_handler handler;
+};
+
+class invoke_item_activity_actor : public activity_actor
+{
+    public:
+        invoke_item_activity_actor( item_location item, std::string method ) :
+            item( std::move( item ) ),
+            method( std::move( method ) ) {};
+        activity_id get_type() const override {
+            return activity_id( "ACT_INVOKE_ITEM" );
+        }
+
+        void start( player_activity &, Character & ) override {};
+        void do_turn( player_activity &, Character &who ) override;
+        void finish( player_activity &, Character & ) override {};
+
+        std::unique_ptr<activity_actor> clone() const override {
+            return std::make_unique<invoke_item_activity_actor>( *this );
+        }
+
+        void serialize( JsonOut & ) const override;
+        static std::unique_ptr<activity_actor> deserialize( JsonValue & );
+
+    private:
+        item_location item;
+        std::string method;
 };
 
 class pickup_menu_activity_actor : public activity_actor

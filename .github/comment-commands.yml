@@ -14,6 +14,7 @@ users:
     - Aerin-of-the-Toast
     - anoobindisguise
     - PatrikLundell
+    - alef
     - TheShadowFerret
     - Jan-Blasiak
     - MNG-cataclysm
@@ -36,7 +37,24 @@ users:
     - irwiss
     - strategineer
     - pjf
+    - SurFlurer
+    - Procyonae
+    - harakka
+    - Karol1223
+    - Bobtron
 
 keywords:
   - name: confirm-bug
     value: '\/(C|c)onfirm.*'
+
+  - name: close-duplicate
+    value: '\/(D|d)uplicate.*'
+
+  - name: close-invalid
+    value: '\/(I|i)nvalid.*'
+
+  - name: good-first-issue
+    value: '\/(G|g)ood[\s-]*(F|f)irst[\s-]*(I|i)ssue.*'
+
+  - name: help-wanted
+    value: '\/(H|h)elp[\s-]*(W|w)anted.*'

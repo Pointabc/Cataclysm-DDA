@@ -32,8 +32,11 @@ static const flag_id json_flag_FILTHY( "FILTHY" );
 static const flag_id json_flag_FIX_NEARSIGHT( "FIX_NEARSIGHT" );
 static const flag_id json_flag_HOT( "HOT" );
 
+static const item_category_id item_category_clothing( "clothing" );
 static const item_category_id item_category_container( "container" );
 static const item_category_id item_category_food( "food" );
+static const item_category_id item_category_guns( "guns" );
+static const item_category_id item_category_tools( "tools" );
 
 static const itype_id itype_test_backpack( "test_backpack" );
 static const itype_id itype_test_duffelbag( "test_duffelbag" );
@@ -79,6 +82,7 @@ TEST_CASE( "gun_layer", "[item]" )
     CHECK( gun.is_gunmod_compatible( mod ).success() );
     gun.put_in( mod, item_pocket::pocket_type::MOD );
     CHECK( gun.get_layer().front() == layer_level::BELTED );
+    CHECK( gun.get_category_of_contents().id == item_category_guns );
 }
 
 TEST_CASE( "stacking_cash_cards", "[item]" )
@@ -192,7 +196,7 @@ TEST_CASE( "stacking_over_time", "[item]" )
     }
 }
 
-TEST_CASE( "liquids at different temperatures", "[item][temperature][stack][combine]" )
+TEST_CASE( "liquids_at_different_temperatures", "[item][temperature][stack][combine]" )
 {
     item liquid_hot( "test_liquid" );
     item liquid_cold( "test_liquid" );
@@ -258,7 +262,7 @@ static void assert_minimum_length_to_volume_ratio( const item &target )
     CHECK( units::to_millimeter( target.length() ) >= minimal_diameter * 10.0 );
 }
 
-TEST_CASE( "item length sanity check", "[item]" )
+TEST_CASE( "item_length_sanity_check", "[item]" )
 {
     for( const itype *type : item_controller->all() ) {
         const item sample( type, calendar::turn_zero, item::solitary_tag {} );
@@ -266,7 +270,7 @@ TEST_CASE( "item length sanity check", "[item]" )
     }
 }
 
-TEST_CASE( "corpse length sanity check", "[item]" )
+TEST_CASE( "corpse_length_sanity_check", "[item]" )
 {
     for( const mtype &type : MonsterGenerator::generator().get_all_mtypes() ) {
         const item sample = item::make_corpse( type.id );
@@ -296,7 +300,7 @@ static void check_spawning_in_container( const std::string &item_type )
     }
 }
 
-TEST_CASE( "items spawn in their default containers", "[item]" )
+TEST_CASE( "items_spawn_in_their_default_containers", "[item]" )
 {
     check_spawning_in_container( "water" );
     check_spawning_in_container( "gunpowder" );
@@ -311,7 +315,7 @@ TEST_CASE( "items spawn in their default containers", "[item]" )
     check_spawning_in_container( "software_useless" );
 }
 
-TEST_CASE( "item variables round-trip accurately", "[item]" )
+TEST_CASE( "item_variables_round-trip_accurately", "[item]" )
 {
     item i( "water" );
     i.set_var( "A", 17 );
@@ -322,7 +326,7 @@ TEST_CASE( "item variables round-trip accurately", "[item]" )
     CHECK( i.get_var( "C", tripoint() ) == tripoint( 2, 3, 4 ) );
 }
 
-TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" )
+TEST_CASE( "water_affect_items_while_swimming_check", "[item][water][swimming]" )
 {
     avatar &guy = get_avatar();
     clear_avatar();
@@ -333,7 +337,7 @@ TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" 
 
         WHEN( "item in hand" ) {
             guy.unwield();
-            guy.worn.clear();
+            guy.clear_worn();
 
             item aspirin( "aspirin" );
 
@@ -347,7 +351,7 @@ TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" 
 
         WHEN( "item in backpack" ) {
             guy.unwield();
-            guy.worn.clear();
+            guy.clear_worn();
 
             item aspirin( "aspirin" );
             item backpack( "backpack" );
@@ -364,7 +368,7 @@ TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" 
 
         WHEN( "item in small plastic bottle" ) {
             guy.unwield();
-            guy.worn.clear();
+            guy.clear_worn();
 
             item aspirin( "aspirin" );
             item bottle_small( "bottle_plastic_small" );
@@ -381,7 +385,7 @@ TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" 
 
         WHEN( "item in backpack inside duffel bag" ) {
             guy.unwield();
-            guy.worn.clear();
+            guy.clear_worn();
 
             item aspirin( "aspirin" );
             item backpack( "backpack" );
@@ -400,7 +404,7 @@ TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" 
 
         WHEN( "item in backpack inside body bag" ) {
             guy.unwield();
-            guy.worn.clear();
+            guy.clear_worn();
 
             item aspirin( "aspirin" );
             item backpack( "backpack" );
@@ -424,7 +428,7 @@ TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" 
 
         WHEN( "item in hand" ) {
             guy.unwield();
-            guy.worn.clear();
+            guy.clear_worn();
 
             item smart_phone( itype_test_smart_phone );
 
@@ -438,7 +442,7 @@ TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" 
 
         WHEN( "item in backpack" ) {
             guy.unwield();
-            guy.worn.clear();
+            guy.clear_worn();
 
             item smart_phone( itype_test_smart_phone );
             item backpack( itype_test_backpack );
@@ -455,7 +459,7 @@ TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" 
 
         WHEN( "item in body bag" ) {
             guy.unwield();
-            guy.worn.clear();
+            guy.clear_worn();
 
             item smart_phone( itype_test_smart_phone );
             item body_bag( "test_waterproof_bag" );
@@ -472,7 +476,7 @@ TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" 
 
         WHEN( "item in backpack inside duffel bag" ) {
             guy.unwield();
-            guy.worn.clear();
+            guy.clear_worn();
 
             item smart_phone( itype_test_smart_phone );
             item backpack( itype_test_backpack );
@@ -491,7 +495,7 @@ TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" 
 
         WHEN( "item in backpack inside body bag" ) {
             guy.unwield();
-            guy.worn.clear();
+            guy.clear_worn();
 
             item smart_phone( itype_test_smart_phone );
             item backpack( itype_test_backpack );
@@ -515,7 +519,7 @@ TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" 
 
         WHEN( "item in hand" ) {
             guy.unwield();
-            guy.worn.clear();
+            guy.clear_worn();
 
             item mp3( itype_test_mp3 );
 
@@ -529,7 +533,7 @@ TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" 
 
         WHEN( "item in backpack" ) {
             guy.unwield();
-            guy.worn.clear();
+            guy.clear_worn();
 
             item mp3( itype_test_mp3 );
             item backpack( itype_test_backpack );
@@ -548,7 +552,7 @@ TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" 
 
         WHEN( "item in body bag" ) {
             guy.unwield();
-            guy.worn.clear();
+            guy.clear_worn();
 
             item mp3( itype_test_mp3 );
             item body_bag( itype_test_waterproof_bag );
@@ -567,7 +571,7 @@ TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" 
 
         WHEN( "item in backpack inside duffel bag" ) {
             guy.unwield();
-            guy.worn.clear();
+            guy.clear_worn();
 
             item mp3( itype_test_mp3 );
             item backpack( itype_test_backpack );
@@ -588,7 +592,7 @@ TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" 
 
         WHEN( "item in backpack inside body bag" ) {
             guy.unwield();
-            guy.worn.clear();
+            guy.clear_worn();
 
             item mp3( itype_test_mp3 );
             item backpack( itype_test_backpack );
@@ -609,7 +613,7 @@ TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" 
 
         WHEN( "item in hand" ) {
             guy.unwield();
-            guy.worn.clear();
+            guy.clear_worn();
 
             item mp3( itype_test_mp3 );
 
@@ -623,7 +627,7 @@ TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" 
 
         WHEN( "item in hand" ) {
             guy.unwield();
-            guy.worn.clear();
+            guy.clear_worn();
 
             item mp3( itype_test_mp3 );
 
@@ -646,7 +650,7 @@ TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" 
 
         WHEN( "item in hand" ) {
             guy.unwield();
-            guy.worn.clear();
+            guy.clear_worn();
 
             item towel( "towel" );
 
@@ -660,7 +664,7 @@ TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" 
 
         WHEN( "wearing item" ) {
             guy.unwield();
-            guy.worn.clear();
+            guy.clear_worn();
 
             item towel( "towel" );
 
@@ -674,7 +678,7 @@ TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" 
 
         WHEN( "inside a backpack" ) {
             guy.unwield();
-            guy.worn.clear();
+            guy.clear_worn();
 
             item towel( "towel" );
             item backpack( "backpack" );
@@ -691,7 +695,7 @@ TEST_CASE( "water affect items while swimming check", "[item][water][swimming]" 
 
         WHEN( "inside a body bag" ) {
             guy.unwield();
-            guy.worn.clear();
+            guy.clear_worn();
 
             item towel( "towel" );
             item body_bag( "test_waterproof_bag" );
@@ -798,7 +802,7 @@ TEST_CASE( "module_inheritance", "[item][armor]" )
     clear_avatar();
     guy.set_body();
     guy.clear_mutations();
-    guy.worn.clear();
+    guy.clear_worn();
 
     item test_exo( "test_modular_exosuit" );
     item test_module( "test_exo_lense_module" );
@@ -916,4 +920,69 @@ TEST_CASE( "item_single_type_contents", "[item]" )
     REQUIRE( nail.get_category_of_contents().id != walnut.get_category_of_contents().id );
     REQUIRE( bag.put_in( nail, item_pocket::pocket_type::CONTAINER ).success() );
     CHECK( bag.get_category_of_contents().id == item_category_container );
+
+    SECTION( "clothing" ) {
+        item jeans( "jeans" );
+        REQUIRE( jeans.get_category_of_contents().id == item_category_clothing );
+        REQUIRE( walnut.get_category_of_contents().id == item_category_food );
+        REQUIRE( jeans.put_in( walnut, item_pocket::pocket_type::CONTAINER ).success() );
+        CHECK( jeans.get_category_of_contents().id == item_category_clothing );
+    }
+
+    SECTION( "software" ) {
+        item usb_drive( "usb_drive" );
+        item software_hacking( "software_hacking" );
+        REQUIRE( usb_drive.get_category_of_contents().id == item_category_tools );
+        REQUIRE( usb_drive.put_in( software_hacking, item_pocket::pocket_type::SOFTWARE ).success() );
+        CHECK( usb_drive.get_category_of_contents().id == item_category_tools );
+    }
+}
+
+TEST_CASE( "item_nested_contents", "[item]" )
+{
+    item walnut( "walnut" );
+    item outer_bag( "bag_plastic" );
+    item inner_bag1( "bag_plastic" );
+    item inner_bag2( "bag_plastic" );
+
+    REQUIRE( inner_bag1.put_in( walnut, item_pocket::pocket_type::CONTAINER ).success() );
+    REQUIRE( inner_bag1.put_in( walnut, item_pocket::pocket_type::CONTAINER ).success() );
+    CHECK( inner_bag1.get_category_of_contents().id == item_category_food );
+
+    REQUIRE( inner_bag2.put_in( walnut, item_pocket::pocket_type::CONTAINER ).success() );
+    CHECK( inner_bag2.get_category_of_contents().id == item_category_food );
+
+    REQUIRE( outer_bag.put_in( inner_bag1, item_pocket::pocket_type::CONTAINER ).success() );
+    REQUIRE( outer_bag.put_in( inner_bag2, item_pocket::pocket_type::CONTAINER ).success() );
+    CAPTURE( outer_bag.display_name() );
+    // outer_bag
+    //   inner_bag1
+    //     walnut
+    //     walnut
+    //   inner_bag2
+    //     walnut
+    CHECK( outer_bag.get_category_of_contents().id == item_category_food );
+}
+
+TEST_CASE( "item_rotten_contents", "[item]" )
+{
+    item wrapper( "wrapper" );
+    REQUIRE( wrapper.get_category_of_contents().id == item_category_container );
+
+    item butter_rotten( "butter" );
+    butter_rotten.set_relative_rot( 1.01 );
+    REQUIRE( wrapper.put_in( butter_rotten, item_pocket::pocket_type::CONTAINER ).success() );
+    REQUIRE( wrapper.put_in( butter_rotten, item_pocket::pocket_type::CONTAINER ).success() );
+    CAPTURE( wrapper.display_name() );
+    CHECK( wrapper.get_category_of_contents().id == item_category_food );
+
+    item butter( "butter" );
+    butter.set_relative_rot( 0.5 );
+    REQUIRE( wrapper.put_in( butter, item_pocket::pocket_type::CONTAINER ).success() );
+    CAPTURE( wrapper.display_name() );
+    // wrapper
+    //   butter (rotten)
+    //   butter (rotten)
+    //   butter
+    CHECK( wrapper.get_category_of_contents().id == item_category_food );
 }
